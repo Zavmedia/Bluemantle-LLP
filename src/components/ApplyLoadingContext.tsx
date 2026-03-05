@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApplyLoadingOverlay from './ApplyLoadingOverlay';
 
@@ -12,15 +12,33 @@ export const ApplyLoadingProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
+    // Handle BFCache navigations (when user clicks back button)
+    useEffect(() => {
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                setIsLoading(false);
+            }
+        };
+
+        window.addEventListener('pageshow', handlePageShow);
+        return () => {
+            window.removeEventListener('pageshow', handlePageShow);
+        };
+    }, []);
+
     const startTransition = useCallback((to: string) => {
         setIsLoading(true);
 
-        const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScdzvb2SutLHUTOrkDGoQG76iYjizeIELLbvhBi4O0uEHRqzQ/viewform";
+        const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdSGT_1I65eDMOIj6wZ4VxFuuT4tpyBI7wCOiZvFfxd8FUg1g/viewform?usp=header";
 
         // After 2 seconds, trigger navigation or redirect
         setTimeout(() => {
             if (to === "/apply") {
                 window.location.href = GOOGLE_FORM_URL;
+                // Add a small delay then reset loading so it's not active if navigation fails or is slow
+                setTimeout(() => {
+                    setIsLoading(false);
+                }, 500);
             } else {
                 navigate(to);
                 // After 3 seconds, hide overlay (only for internal navigation)
@@ -46,4 +64,3 @@ export const useApplyTransition = () => {
     }
     return context;
 };
-
